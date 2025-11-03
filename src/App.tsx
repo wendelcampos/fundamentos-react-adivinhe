@@ -1,29 +1,30 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import styles from "./app.module.css"
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
 
-import { WORDS } from "./utils/words";
-import type { Challenge } from "./utils/words";
-import type { LetterUsedProps } from "./components/LettersUsed";
+import { WORDS } from "./utils/words"
+import type { Challenge } from "./utils/words"
+import type { LetterUsedProps } from "./components/LettersUsed"
 
-import { Header } from "./components/Header";
-import { Input } from "./components/Input";
-import { Letter } from "./components/Letter";
-import { Tip } from "./components/Tip";
-import { Button } from "./components/Button";
-import { LetterUsed } from "./components/LettersUsed";
+import { Header } from "./components/Header"
+import { Input } from "./components/Input"
+import { Letter } from "./components/Letter"
+import { Tip } from "./components/Tip"
+import { Button } from "./components/Button"
+import { LetterUsed } from "./components/LettersUsed"
 function App() {
   const [score, setScore] = useState(0)
   const [letter, setLetter] = useState("")
   const [lettersUsed, setLetterUsed] = useState<LetterUsedProps[]>([])
   const [challenge, setChallenge] = useState<Challenge | null>(null)
+  const [shake, setShake] = useState(false)
 
   const ATTEMPTS_MARGIN = 5
 
   function handleRestartGame() {
     const isConfirmed = window.confirm("Você tem certeza que deseja reiniciar?")
 
-    if(isConfirmed) {
+    if (isConfirmed) {
       startGame()
     }
   }
@@ -40,29 +41,40 @@ function App() {
   }
 
   function handleConfirm() {
-    if(!challenge) {
+    if (!challenge) {
       return
     }
 
-    if(!letter.trim()) {
+    if (!letter.trim()) {
       return alert("Digite uma letra!")
     }
 
     const value = letter.toUpperCase()
-    const exists = lettersUsed.find((used) => used.value.toUpperCase() === value)
+    const exists = lettersUsed.find(
+      (used) => used.value.toUpperCase() === value
+    )
 
-    if(exists) {
+    if (exists) {
       return alert("Voce ja utilizou a letra " + value)
     }
 
-    const hits = challenge.word.toUpperCase().split("").filter((char) => char === value).length
+    const hits = challenge.word
+      .toUpperCase()
+      .split("")
+      .filter((char) => char === value).length
 
     const correct = hits > 0
     const currentScore = score + hits
 
     setLetterUsed((prevState) => [...prevState, { value, correct }])
     setScore(currentScore)
+
     setLetter("")
+
+    if (!correct) {
+      setShake(true)
+      setTimeout(() => setShake(false), 300)
+    }
   }
 
   function endGame(message: string) {
@@ -75,66 +87,68 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if(!challenge) return 
+    if (!challenge) return
 
     setTimeout(() => {
-      if(score === challenge.word.length) {
+      if (score === challenge.word.length) {
         return endGame("Parabéns, voce descobriu a palavra!")
       }
 
       const attemptLimit = challenge.word.length + ATTEMPTS_MARGIN
 
-      if(lettersUsed.length === attemptLimit) {
+      if (lettersUsed.length === attemptLimit) {
         return endGame("Que pena, você usou todas as tentativas!")
       }
     }, 200)
   }, [score, lettersUsed.length])
 
-  if(!challenge) {
+  if (!challenge) {
     return
   }
 
   return (
     <div className={styles.container}>
       <main>
-        <Header 
-          current={ lettersUsed.length } 
-          max={ challenge.word.length + ATTEMPTS_MARGIN } 
+        <Header
+          current={lettersUsed.length}
+          max={challenge.word.length + ATTEMPTS_MARGIN}
           onRestart={handleRestartGame}
         />
-        
-        <Tip tip={ challenge.tip }/>
 
-        <div className={ styles.word }>
-          { challenge.word.split("").map((letter, index) => {
-              const letterUsed = lettersUsed.find((used) => used.value.toUpperCase() === letter.toUpperCase() )
+        <Tip tip={challenge.tip} />
 
-              return (
-                <Letter 
-                  key={index} 
-                  value={letterUsed?.value ?? ""} 
-                  color={ letterUsed?.correct ? "correct" : "default" }/>
-              )
+        <div className={`${styles.word} ${shake && styles.shake}`}>
+          {challenge.word.split("").map((letter, index) => {
+            const letterUsed = lettersUsed.find(
+              (used) => used.value.toUpperCase() === letter.toUpperCase()
+            )
+
+            return (
+              <Letter
+                key={index}
+                value={letterUsed?.value ?? ""}
+                color={letterUsed?.correct ? "correct" : "default"}
+              />
+            )
           })}
         </div>
 
         <h4>Palpite</h4>
 
-        <div className={ styles.guess }>
-          <Input 
-            autoFocus 
-            maxLength={1} 
+        <div className={styles.guess}>
+          <Input
+            autoFocus
+            maxLength={1}
             placeholder="?"
             value={letter}
             onChange={(e) => setLetter(e.target.value)}
           />
-          <Button title="Confirmar" onClick={handleConfirm}/>
+          <Button title="Confirmar" onClick={handleConfirm} />
         </div>
 
-        <LetterUsed data={lettersUsed}/>
+        <LetterUsed data={lettersUsed} />
       </main>
     </div>
-
   )
 }
 
